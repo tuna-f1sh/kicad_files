@@ -72,7 +72,7 @@ pub struct Paper {
 
 #[derive(Deserialize)]
 #[serde(rename = "paper")]
-struct PaperDef<'a> {
+struct PaperDef {
 	#[serde(with = "serde_sexpr::Option")]
 	width: Option<mm>,
 
@@ -80,7 +80,7 @@ struct PaperDef<'a> {
 	height: Option<mm>,
 
 	#[serde(with = "serde_sexpr::Option")]
-	size: Option<&'a str>,
+	size: Option<String>,
 
 	portrait: bool
 }
@@ -90,7 +90,7 @@ impl<'de> Deserialize<'de> for Paper {
 	where
 		D: Deserializer<'de>
 	{
-		let def = <PaperDef<'de>>::deserialize(deserializer)?;
+		let def = <PaperDef>::deserialize(deserializer)?;
 		let size = match (def.size, def.width, def.height) {
 			(Some(size), None, None) => size.parse().map_err(D::Error::custom)?,
 			(None, Some(width), Some(height)) => PaperSize::Custom { width, height },
