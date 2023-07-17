@@ -9,6 +9,7 @@ mod footprint_module;
 pub mod graphic;
 mod layer;
 mod timestamp;
+pub mod pcb;
 
 pub use connect_pads::ConnectPads;
 pub use footprint::Footprint;

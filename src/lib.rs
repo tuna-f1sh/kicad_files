@@ -31,6 +31,7 @@ pub mod common;
 pub mod schematic;
 pub mod symbol;
 pub mod symbol_lib;
+pub use board::pcb;
 
 pub use degree::{deg, Deg};
 

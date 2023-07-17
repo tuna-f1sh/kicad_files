@@ -30,7 +30,7 @@ pub use wire::Wire;
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields, rename = "version")]
-pub struct Version(u32);
+pub struct Version(pub u32);
 
 impl Default for Version {
 	fn default() -> Self {
