@@ -26,6 +26,7 @@ impl From<bool> for YesNo {
 	}
 }
 
+#[allow(dead_code)]
 pub(crate) fn deserialize<'de, D>(deserializer: D) -> Result<bool, D::Error>
 where
 	D: Deserializer<'de>
@@ -33,6 +34,7 @@ where
 	tuple::deserialize(deserializer).map(YesNo::into)
 }
 
+#[allow(dead_code)]
 pub(crate) fn serialize<S>(this: &bool, serializer: S) -> Result<S::Ok, S::Error>
 where
 	S: Serializer
