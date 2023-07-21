@@ -4,13 +4,14 @@
 use std::fmt;
 use std::str::FromStr;
 use serde::{Deserialize, Serialize};
-use serde::de::Deserializer;
+// use serde::de::Deserializer;
 use serde_sexpr::untagged;
 
 use crate::mm;
 use crate::internal::{tuple, option_tuple};
 use crate::common::{Paper, TitleBlock};
-use crate::board::graphic::GraphicItem;
+use crate::board::graphic::{Arc, Circle, Curve, Line, Polygon, Rectangle, Text, Segment};
+use crate::board::footprint::Footprint;
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields, rename = "version")]
@@ -151,12 +152,28 @@ untagged! {
     #[derive(Clone, Debug, PartialEq)]
     /// Parts of the PCB file which are not always present
     pub enum PCBContent {
+        #[serde(skip)]
         LayersList(LayersList),
-        // Setup(Setup),
-        // Properties(Properties),
+        #[serde(skip)]
+        Setup(String),
+        #[serde(skip)]
         Net(Net),
-        // Footprints(Footprints),
-        GraphicItem(GraphicItem)
+        #[serde(skip)]
+        Footprint(Footprint),
+        // Would be nice to use GraphicItem for this but untagged inside untagged does not seem to work
+        GrArc(Arc),
+        GrCircle(Circle),
+        GrCurve(Curve),
+        GrLine(Line),
+        GrPoly(Polygon),
+        GrRect(Rectangle),
+        GrText(Text),
+        #[serde(skip)]
+        Segment(Segment),
+        #[serde(skip)]
+        Dimension(String),
+        #[serde(skip)]
+        Zone(String)
         // Images(Images),
         // Tracks(Tracks),
         // Zones(Zones),
@@ -191,7 +208,6 @@ mod tests {
     use std::fs;
     use crate::Unit;
     use crate::common::{PaperSize, Point};
-    use crate::board::graphic::Circle;
     use uuid::Uuid;
     use super::*;
 
@@ -211,23 +227,23 @@ mod tests {
         assert_eq!(actual.to_string(), input);
     }
 
-    // sexpr_test_case! {
-    //     name: pcb_layer,
-    //     input: r#"(0 "F.Cu" signal)"#,
-    //     value: Layer { number: 0, name: "F.Cu".to_string(), layer_type: LayerType::Signal, user: None }
-    // }
+    sexpr_test_case! {
+        name: pcb_layer,
+        input: r#"(0 "F.Cu" signal)"#,
+        value: Layer { number: 0, name: "F.Cu".to_string(), layer_type: LayerType::Signal, user: None }
+    }
 
-    // sexpr_test_case! {
-    //     name: layers_list,
-    //     input: r#"(layers (0 "F.Cu" signal) (31 "B.Cu" signal) (40 "Dwgs.User" user "User.Drawings"))"#,
-    //     value: LayersList { 
-    //         layers: vec![
-    //             Layer { number: 0, name: "F.Cu".to_string(), layer_type: LayerType::Signal, user: None },
-    //             Layer { number: 31, name: "B.Cu".to_string(), layer_type: LayerType::Signal, user: None },
-    //             Layer { number: 40, name: "Dwgs.User".to_string(), layer_type: LayerType::User, user: Some("User.Drawings".to_string()) }
-    //         ]
-    //     }
-    // }
+    sexpr_test_case! {
+        name: layers_list,
+        input: r#"(layers (0 "F.Cu" signal) (31 "B.Cu" signal) (40 "Dwgs.User" user "User.Drawings"))"#,
+        value: LayersList { 
+            layers: vec![
+                Layer { number: 0, name: "F.Cu".to_string(), layer_type: LayerType::Signal, user: None },
+                Layer { number: 31, name: "B.Cu".to_string(), layer_type: LayerType::Signal, user: None },
+                Layer { number: 40, name: "Dwgs.User".to_string(), layer_type: LayerType::User, user: Some("User.Drawings".to_string()) }
+            ]
+        }
+    }
 
     sexpr_test_case! {
         name: net,
@@ -238,50 +254,43 @@ mod tests {
     sexpr_test_case! {
         name: pcb_content,
         input: r#"(gr_circle (center 1 1) (end 2 2) (width 0.12) (tstamp "00000000-0000-0000-0000-000000000000"))"#,
-        value: PCBContent::GraphicItem(
-            GraphicItem::Circle(
-                Circle {
-                    center: Point::new(1.0.mm(), 1.0.mm()),
-                    end: Point::new(2.0.mm(), 2.0.mm()),
-                    layer: None,
-                    width: 0.12.mm(),
-                    fill: None,
-                    tstamp: Uuid::nil()
-                }
-            )
+        value: PCBContent::GrCircle(
+            Circle {
+                center: Point::new(1.0.mm(), 1.0.mm()),
+                end: Point::new(2.0.mm(), 2.0.mm()),
+                layer: None,
+                width: 0.12.mm(),
+                fill: None,
+                tstamp: Uuid::nil()
+            }
         )
     }
 
 
-    // sexpr_test_case! {
-    //     name: kicad_pcb,
-    //     input: r#"(kicad_pcb (version 20221018) (generator pcbnew) (general (thickness 0.89)) (paper A4) (title_block (title Minnow)) (layers (0 "F.Cu" signal)))"#,
-    //     value: PCB {
-    //         version: Version(20221018),
-    //         generator: "pcbnew".to_string(),
-    //         general: General {
-    //             thickness: 0.89.mm(),
-    //             ..Default::default()
-    //         },
-    //         page: Paper {
-    //             size: PaperSize::A4,
-    //             portrait: false,
-    //         },
-    //         title_block: TitleBlock {
-    //             title: Some("Minnow".to_string()),
-    //             date: None,
-    //             revision: None,
-    //             company: None,
-    //             comments: vec![],
-    //         },
-    //         layers: LayersList { 
-    //             layers: vec![
-    //                 Layer { number: 0, name: "F.Cu".to_string(), layer_type: LayerType::Signal, user: None }
-    //             ] 
-    //         },
-    //         pcb_content: vec![]
-    //     }
-    // }
+    sexpr_test_case! {
+        name: kicad_pcb,
+        input: r#"(kicad_pcb (version 20221018) (generator pcbnew) (general (thickness 0.89)) (paper A4) (title_block (title Minnow)))"#,
+        value: PCB {
+            version: Version(20221018),
+            generator: "pcbnew".to_string(),
+            general: General {
+                thickness: 0.89.mm(),
+                ..Default::default()
+            },
+            page: Paper {
+                size: PaperSize::A4,
+                portrait: false,
+            },
+            title_block: TitleBlock {
+                title: Some("Minnow".to_string()),
+                date: None,
+                revision: None,
+                company: None,
+                comments: vec![],
+            },
+            pcb_content: vec![]
+        }
+    }
 
     #[test]
     fn test_deserialize_kicad_pcb_file() {

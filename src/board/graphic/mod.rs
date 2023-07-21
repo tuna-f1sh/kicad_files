@@ -5,6 +5,7 @@ mod line;
 mod poly;
 mod rect;
 mod text;
+mod segment;
 
 pub use arc::Arc;
 pub use circle::Circle;
@@ -13,6 +14,7 @@ pub use line::Line;
 pub use poly::Polygon;
 pub use rect::Rectangle;
 pub use text::Text;
+pub use segment::Segment;
 
 serde_sexpr::untagged! {
 	#[derive(Clone, Debug, Eq, PartialEq)]
