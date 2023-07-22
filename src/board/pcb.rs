@@ -35,15 +35,21 @@ pub struct General {
     #[serde(with = "tuple")]
     pub thickness: mm,
     #[serde(with = "option_tuple")]
-    drawings: Option<u32>,
+    pub area: Option<(f32, f32, f32, f32)>,
     #[serde(with = "option_tuple")]
-    tracks: Option<u32>,
+    pub no_connects: Option<u32>,
     #[serde(with = "option_tuple")]
-    zones: Option<u32>,
+    pub links: Option<u32>,
     #[serde(with = "option_tuple")]
-    modules: Option<u32>,
+    pub drawings: Option<u32>,
     #[serde(with = "option_tuple")]
-    nets: Option<u32>,
+    pub tracks: Option<u32>,
+    #[serde(with = "option_tuple")]
+    pub zones: Option<u32>,
+    #[serde(with = "option_tuple")]
+    pub modules: Option<u32>,
+    #[serde(with = "option_tuple")]
+    pub nets: Option<u32>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -142,10 +148,35 @@ pub struct LayersList {
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename = "setup")]
+// TODO
+pub struct Setup {
+}
+
+#[derive(Debug, Default, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename = "property")]
+pub struct Property {
+    pub key: String,
+    pub value: String,
+}
+
+#[derive(Debug, Default, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename = "zone")]
+// TODO
+pub struct Zone {
+}
+
+#[derive(Debug, Default, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename = "dimension")]
+// TODO
+pub struct Dimension {
+}
+
+#[derive(Debug, Default, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename = "net")]
 pub struct Net {
-    number: u8,
-    name: String,
+    pub number: u8,
+    pub name: String,
 }
 
 untagged! {
@@ -153,9 +184,8 @@ untagged! {
     /// Parts of the PCB file which are not always present
     pub enum PCBContent {
         #[serde(skip)]
-        LayersList(LayersList),
-        #[serde(skip)]
-        Setup(String),
+        Setup(Setup),
+        Property(Property),
         #[serde(skip)]
         Net(Net),
         #[serde(skip)]
@@ -171,9 +201,9 @@ untagged! {
         #[serde(skip)]
         Segment(Segment),
         #[serde(skip)]
-        Dimension(String),
+        Dimension(Dimension),
         #[serde(skip)]
-        Zone(String)
+        Zone(Zone)
         // Images(Images),
         // Tracks(Tracks),
         // Zones(Zones),
@@ -184,12 +214,13 @@ untagged! {
 #[serde(rename = "kicad_pcb")]
 pub struct PCB {
     pub version: Version,
-    #[serde(with = "tuple")]
+    #[serde(with = "tuple", alias = "host")]
     pub generator: String,
     pub general: General,
     pub page: Paper,
     pub title_block: TitleBlock,
-    // pub layers: LayersList,
+    #[serde(skip, rename = "layers")]
+    pub layers: Vec<Layer>,
     #[serde(rename = "")]
     pub pcb_content: Vec<PCBContent>,
 }
@@ -288,6 +319,7 @@ mod tests {
                 company: None,
                 comments: vec![],
             },
+            layers: vec![],
             pcb_content: vec![]
         }
     }
@@ -295,7 +327,7 @@ mod tests {
     #[test]
     fn test_deserialize_kicad_pcb_file() {
         let cargo_dir: PathBuf = env!("CARGO_MANIFEST_DIR").parse().unwrap();
-        let filepath = cargo_dir.join("tests").join("minnow.kicad_pcb");
+        let filepath = cargo_dir.join("tests").join("sample.kicad_pcb");
         let mut contents =
             fs::read_to_string(filepath).expect("Test .kicad_pcb file missing or unreadable");
         contents = contents.trim().to_string();

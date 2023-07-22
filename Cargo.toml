@@ -13,10 +13,6 @@ keywords = ["s-expression", "s-expr", "kicad", "serde", "serialization"]
 
 repository = "https://github.com/kicad-rs/kicad_files"
 
-exclude = [
-  "tests/*",
-]
-
 [features]
 skip_nil_uuids = []
 
